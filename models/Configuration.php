@@ -1,6 +1,7 @@
 <?php namespace Ntn\Configuration\Models;
 
 use October\Rain\Database\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Configuration extends Model
 {
@@ -21,5 +22,31 @@ class Configuration extends Model
         'value' => 'required',
         'description' => 'required',
     ];
+
+    /**
+     * Get value of configuration by key
+     * @param $key
+     * @return string
+     */
+    public static function getValueByKey($key, $langCode = null)
+    {
+        $cacheKey = __FUNCTION__ . ':' . $key . '.' . $langCode;
+//        $result = Cache::tags('configuration')->get($cacheKey);
+        $result = Cache::get($cacheKey);
+
+        if ($result == null) {
+            if ($langCode) {
+                $key .= '_' . $langCode;
+            }
+            $config = self::where('key', strtoupper($key))->first();
+            if ($config) {
+
+                $result = $config->value;
+//                Cache::tags('configuration')->forever($cacheKey, $result);
+                Cache::forever($cacheKey, $result);
+            }
+        }
+        return $result;
+    }
 
 }
